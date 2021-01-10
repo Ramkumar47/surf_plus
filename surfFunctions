@@ -1,0 +1,155 @@
+#!/bin/zsh
+
+# shell script functions for surf browser
+
+# bookmark save function
+function save_bookmark()
+{
+	# inputs definition
+	# $1 - url string
+	# $2 - window id
+
+	# splitting the input to get only address
+	input_url=`echo $1 | cut -d'"' -f 2`
+
+	# getting choice to save bookmark
+	opt=`echo "yes\nno" | dmenu -p "bookmark this page?" -w $2 -l 2`
+
+	# getting name for bookmark
+	name=`echo "" | dmenu -p "Enter name for bookmark" -w $2`
+
+	# proceeding to save bookmark
+	if [[ $opt == "yes" ]] then
+		# reverse sorting existing bookmarks
+		tac ~/.surf/bookmarks.txt > /tmp/surfbookmarkrev.txt
+		# preparing temporal entry
+		entrytime=`echo $(date) | sed 's/ /_/g'`
+		# preparing name entry
+		entryname=`echo "$name" | sed 's/ /_/g'`
+		# adding current bookmark to the above reverse-sorted text
+		echo $entrytime $entryname $input_url >> /tmp/surfbookmarkrev.txt
+		# sorting back the bookmarks
+		tac /tmp/surfbookmarkrev.txt > ~/.surf/bookmarks.txt
+
+		# reporting in the dunst
+		notify-send -u "low" "bookmark saved!"
+	else
+		notify-send -u "low" "bookmark ignored!"
+	fi
+
+}
+
+# bookmark clear function
+function clear_bookmarks()
+{
+	# inputs definition
+	# $1 - window id
+
+	# splitting the input to get only address
+	input_url=`echo $1 | cut -d'"' -f 2`
+
+	# getting choice to save bookmark
+	opt=`echo "no\nyes" | dmenu -p "clear all bookmarks?" -w $1 -l 2`
+
+	# conditional statement
+	if [[ $opt == "yes" ]] then
+		echo "" > ~/.surf/bookmarks.txt
+		notify-send -u "normal" "All bookmarks cleared!"
+	fi
+
+}
+
+# search_history clear function
+function clear_search_history()
+{
+	# inputs definition
+	# $1 - window id
+
+	# splitting the input to get only address
+	input_url=`echo $1 | cut -d'"' -f 2`
+
+	# getting choice to save search_history
+	opt=`echo "no\nyes" | dmenu -p "clear all search history?" -w $1 -l 2`
+
+	# conditional statement
+	if [[ $opt == "yes" ]] then
+		rm ~/.surf/search_history.txt
+		touch ~/.surf/search_history.txt
+		notify-send -u "normal" "Search history cleared!"
+	fi
+
+}
+
+# google search function
+function google_search()
+{
+	# inputs definition
+	# $1 - window id
+
+	# getting search string
+	query=`cat ~/.surf/search_history.txt | awk '{$1=""; print $0}' | sort | uniq | dmenu -p "search:" -l 5 -w $1`
+
+	# checking if query present
+	if [[ $query == "" ]] then
+		exit
+	fi
+
+	# saving search querry
+	tac ~/.surf/search_history.txt > /tmp/surftemp.txt
+	# preparing temporal entry
+	entrytime=`echo $(date) | sed 's/ /_/g'`
+	# adding current bookmark to the above reverse-sorted text
+	echo $entrytime $query >> /tmp/surftemp.txt
+	# sorting back the bookmarks
+	tac /tmp/surftemp.txt > ~/.surf/search_history.txt
+
+	# preparing search url
+	input_url="https://www.google.com/search?q=$query"
+
+	# setting window property to initiate browsing
+	xprop -id $1 -f "_SURF_GO" 8s -set "_SURF_GO" "$input_url"
+}
+
+# show bookmarks function
+function show_bookmarks()
+{
+	# showing all the bookmarks
+	choice=`cat ~/.surf/bookmarks.txt | awk '{print $2" "$3}' | dmenu -l 5 -p "Bookmarks list" -w $1`
+
+	# extracting url
+	input_url=`echo "$choice" | awk '{print $2}'`
+
+	# setting window property to initiate browsing
+	xprop -id $1 -f "_SURF_GO" 8s -set "_SURF_GO" "$input_url"
+}
+
+# master control function
+function master_control()
+{
+	# inputs definition
+	# $1 - url string
+	# $2 - window id
+
+	# function list strings declaration
+	funcs="save_bookmark\nclear_bookmarks\nshow_bookmarks\nclear_search_history"
+	# dmenu promt call
+	choice=`echo $funcs | dmenu -l 5 -w $2 -p "Command"`
+
+	# choice case statement
+	case $choice in
+		"save_bookmark") # save_bookmark function call
+			save_bookmark $1 $2
+			;;
+		"clear_bookmarks") # clear_bookmarks function call
+			clear_bookmarks $2
+			;;
+		"show_bookmarks") # show_bookmarks function call
+			show_bookmarks $2
+			;;
+		"clear_search_history") # clear_search_history function call
+			clear_search_history $2
+			;;
+	esac
+}
+
+"$@" # line to call functions from terminal
