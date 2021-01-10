@@ -12,7 +12,7 @@ things implemented are
 * master control key Ctrl+m to open command bar.
 
 ## Installation instructions
-the version of **surf** used for this configurationw was 2.0 and the extensions
+the version of **surf** used for this configuration was 2.0 and the extensions
 are believed to work on higher versions as well.
 
 * copy the surf/ folder to a place like Software/ directory
@@ -25,7 +25,7 @@ dependenices are listed in the pkglist.txt file and will be installed during mas
 * History operations, like storing, loading and clearing.
 
 this configuration was partially abandoned because of its resource heavy usage.
-The browser is minimal but the webgtk engine it uses is quite heavy.
+The browser is minimal but the webkit engine it uses is quite heavy.
 
 ## links
 * surf.suckless.org
